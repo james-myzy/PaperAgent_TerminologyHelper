@@ -1,0 +1,43 @@
+{
+  "name": "dsh-paper-agent",
+  "version": "1.0.1",
+  "private": true,
+  "type": "module",
+  "description": "术语透视：论文术语高亮与就地解释，直接嵌进 DeepSeek Harness 的阅读层",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json",
+    "./cordis.patch.yml": "./cordis.patch.yml"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/client.js",
+    "lib/dsh-llm.js",
+    "lib/tools.js",
+    "lib/paper/**",
+    "web/**",
+    "cordis.patch.yml",
+    "LICENSE",
+    "icon.svg"
+  ],
+  "license": "MIT",
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": []
+    }
+  },
+  "dependencies": {
+    "docx": "^9.15.3",
+    "mammoth": "^1.13.0",
+    "pdfjs-dist": "4.10.38"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "~4.0.5"
+  }
+}

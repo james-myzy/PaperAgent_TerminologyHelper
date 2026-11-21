@@ -1,0 +1,12 @@
+# 术语透视：论文术语高亮、就地解释、选段解释、智能体追问。
+# 挂载一个宿主插件（本包的 lib/index.js），它的浏览器半边由 dsh.client 自动挂到同一条
+# Loader 行上，所以关掉这一行，侧边栏入口和页面一起消失。
+- insert:
+    - id: paper-agent
+      name: dsh-paper-agent
+      config:
+        basePath: /paper-agent
+        provider: deepseek-official
+        model: deepseek-flash
+        maxSteps: 6
+        maxImportChunks: 3

@@ -1,0 +1,15 @@
+Attention Is All You Need: A Practical Re-implementation Note
+
+Abstract. The Transformer architecture has become the dominant approach for sequence modeling. In this note we re-examine the original encoder-decoder design, the scaled dot-product attention mechanism, and the multi-head attention layer, and we report reproducible results on a small machine translation benchmark.
+
+1. Introduction. Recurrent neural networks and long short-term memory networks were long the standard for natural language processing. They process tokens sequentially, which limits parallelism. The Transformer instead relies entirely on self-attention, removing recurrence and convolution from the encoder and decoder stacks.
+
+2. Method. Each layer applies multi-head attention followed by a position-wise feed-forward network. Residual connections and layer normalization are used around every sub-layer. The model is trained with the Adam optimizer using a warm-up learning rate schedule and label smoothing as a regularization technique.
+
+3. Evaluation. We evaluate with the BLEU score on the WMT English-German translation task. We also report perplexity on a held-out validation set. Ablation studies remove the positional encoding, reduce the number of attention heads, and replace layer normalization with batch normalization.
+
+4. Results. The big variant reaches 28.4 BLEU, outperforming the previous state of the art by more than two BLEU points. Training used data augmentation with back-translation and dropout of 0.1 to reduce overfitting. Gradient clipping was applied at a norm of 1.0.
+
+5. Discussion. Self-attention provides a constant path length between any two positions, which improves the modeling of long-range dependencies. However, the quadratic complexity in sequence length remains a limitation for long documents. Future work includes sparse attention, linear attention, and retrieval-augmented generation.
+
+6. Conclusion. The Transformer is a general-purpose sequence model. With careful tuning of the learning rate, batch size, and warm-up steps, it generalizes well across tasks including machine translation, text classification, and semantic segmentation of documents.

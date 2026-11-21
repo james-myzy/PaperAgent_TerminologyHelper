@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>方案 A · 透视层</title>
+<link rel="stylesheet" href="mock.css" />
+<style>
+  .shell { height: 100vh; display: flex; flex-direction: column; }
+  .main { flex: 1; display: grid; grid-template-columns: 1fr 348px; min-height: 0; }
+
+  /* 左：论文通栏（左对齐，右侧留出批注边栏） */
+  .reader { overflow: hidden; padding: 26px 0 26px 40px; }
+  .reader-inner { width: 720px; position: relative; }
+  .paper p { font-size: 14px; line-height: 1.98; }
+
+  /* 右：术语索引 + 智能体停靠 */
+  .rail { border-left: 1px solid var(--line); background: rgba(255,255,255,0.72); display: flex; flex-direction: column; min-height: 0; }
+  .rail-head { padding: 14px 16px 10px; border-bottom: 1px solid var(--line); }
+  .rail-title { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; }
+  .rail-title .count { font-family: var(--mono); font-size: 11px; color: var(--primary); background: var(--primary-soft); border-radius: 5px; padding: 1px 6px; }
+  .search {
+    margin-top: 10px; height: 34px; border: 1px solid var(--line-strong); border-radius: 9px;
+    display: flex; align-items: center; gap: 8px; padding: 0 10px; color: var(--muted); font-size: 12px;
+    background: var(--surface);
+  }
+  .chips { display: flex; gap: 6px; margin-top: 9px; flex-wrap: wrap; }
+  .chip { font-size: 11px; border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px; color: var(--muted); background: var(--surface); }
+  .chip.on { border-color: var(--primary); color: var(--primary-dark); background: var(--primary-soft); }
+
+  .rail-list { flex: 1; overflow: hidden; padding: 10px 12px; }
+  .t-item { display: flex; gap: 9px; align-items: flex-start; padding: 9px 8px; border-radius: 8px; border-bottom: 1px solid #f0f6f8; }
+  .t-item.on { background: var(--primary-soft); border-bottom-color: transparent; }
+  .t-no { font-family: var(--mono); font-size: 9.5px; color: var(--primary); opacity: 0.75; width: 26px; flex: none; padding-top: 3px; }
+  .t-name { font-family: var(--serif); font-size: 12.5px; font-weight: 700; line-height: 1.35; display: block; }
+  .t-zh { font-size: 11px; color: var(--primary-dark); }
+  .t-meta { margin-left: auto; font-size: 10px; color: var(--muted); font-family: var(--mono); flex: none; padding-top: 3px; }
+
+  /* 智能体停靠条：不抢正文，随时可唤起 */
+  .dock { border-top: 1px solid var(--line); padding: 10px 12px 12px; background: #fbfdfe; }
+  .dock-head { display: flex; align-items: center; gap: 7px; font-size: 10.5px; color: var(--muted); margin-bottom: 8px; }
+  .dock-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  .dock-row { display: flex; gap: 7px; }
+  .dock-input { flex: 1; height: 36px; border: 1px solid var(--line-strong); border-radius: 9px; padding: 0 10px; display: flex; align-items: center; font-size: 11.5px; color: var(--muted); background: #fff; }
+  .dock-send { width: 36px; height: 36px; border-radius: 9px; border: none; background: var(--primary); color: #fff; font-size: 14px; }
+  .dock-quick { display: flex; gap: 5px; margin-top: 7px; flex-wrap: wrap; }
+  .dock-quick span { font-size: 10px; border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; color: var(--ink-soft); background: #fff; }
+
+  /* 边注浮层：贴在右侧空白处，箭头指向被点术语 */
+  .popover { left: 748px; top: 96px; width: 340px; }
+  .popover::before {
+    top: 22px; left: -7px;
+    border-left: 1px solid var(--line); border-top: 1px solid var(--line);
+    border-right: none; border-bottom: none;
+    transform: rotate(-45deg);
+  }
+  .pop-foot { flex-wrap: wrap; }
+
+  .status {
+    height: 30px; border-top: 1px solid var(--line); background: rgba(255,255,255,0.8);
+    display: flex; align-items: center; gap: 16px; padding: 0 22px; font-size: 11px; color: var(--muted);
+  }
+  .status b { color: var(--ink-soft); font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="topbar">
+    <div class="logo">透</div>
+    <div>
+      <div class="brand-title">术语透视 <span style="font-size:11px;color:var(--muted);font-family:var(--sans);font-weight:400">· 论文术语分析助手</span></div>
+      <div class="brand-sub">不替你读论文，只让你读得更懂</div>
+    </div>
+    <span class="pill" style="margin-left:6px"><span style="width:6px;height:6px;border-radius:50%;background:var(--accent);display:inline-block"></span> SkyJEPA · 18 页 · 92,878 字</span>
+    <div class="spacer"></div>
+    <div class="seg"><span class="on">原文</span><span>译文</span></div>
+    <button class="btn">论文内搜索</button>
+    <button class="btn">联网</button>
+    <button class="btn primary">导出高亮 Word</button>
+  </div>
+
+  <div class="main">
+    <div class="reader">
+      <div class="reader-inner paper">
+        <div class="lead">Section 1 · Abstract</div>
+        <h1 style="margin-top:8px">SkyJEPA: Learning Long-Horizon World Models for Zero-Shot Sim-to-Real Control of Quadrotors</h1>
+        <div class="authors">Pratyakh Rao¹, Wancong Zhang², Randall Balestriero³, Yann LeCun², Giuseppe Loianno¹</div>
+        <div class="affil">¹NYU Tandon School of Engineering　²FAIR at Meta　³Brown University</div>
+
+        <p><b>Abstract</b>—Accurate dynamics models are critical for informed decision-making in robotic systems, particularly for agile aerial vehicles operating under uncertainty. Neural network dynamics models are attractive for capturing complex nonlinear effects, but existing predictive approaches struggle with long-horizon forecasting because their <mark>autoregressive rollout<span class="term-no">01</span></mark> mechanism amplifies errors over time.</p>
+
+        <p><mark>Joint Embedding Predictive Architectures (JEPAs)<span class="term-no">02</span></mark> offer a compelling alternative by modeling dynamics in <mark>latent space<span class="term-no">03</span></mark>, yet prior JEPA-style methods for robot navigation have been studied primarily for <mark>kinematic-level planning<span class="term-no">04</span></mark>, with limited investigation in <mark>high-frequency control<span class="term-no">05</span></mark>.</p>
+
+        <p>In this work, we introduce the JEPA-style model for real-time <mark>quadrotor control<span class="term-no">06</span></mark>. The proposed approach combines a <mark>latent dynamics model<span class="term-no">07</span></mark> with a novel <mark class="active">physics-inspired prober<span class="term-no">08</span></mark> that maps frozen latents to <mark>interpretable state<span class="term-no">09</span></mark>, enabling physically grounded long-horizon prediction without task-specific reward engineering.</p>
+
+        <p>We evaluate the approach on aggressive trajectory tracking in simulation and deploy zero-shot on a physical platform, reporting tracking error, recovery rate, and inference latency at 100 Hz.</p>
+
+        <div class="h2">2. Method</div>
+        <p>The world model is trained entirely in <mark>latent space<span class="term-no">03</span></mark>: an encoder maps observations to embeddings, a predictor models their evolution under actions, and the prober decodes physical state. No pixel reconstruction is required, which keeps the training signal focused on dynamics rather than appearance.</p>
+
+        <!-- 点击术语后，解释出现在右侧边注栏 -->
+        <div class="popover">
+          <div class="pop-head">
+            <span class="pop-no">N° 08</span>
+            <span class="pop-term">physics-inspired prober</span>
+            <span class="pop-zh">物理启发探针</span>
+          </div>
+          <div style="font-size:10.5px;color:var(--muted);margin-bottom:2px">第 1 段 · 出现 2 次 · 双击可跳回</div>
+          <div class="pop-body">
+            <b>专业定义</b>　一个轻量映射头，把冻结的隐空间表示投影到有物理意义的低维状态量（位置、姿态、速度）。
+            <br /><b>上下文释义</b>　本文用它把 JEPA 学到的抽象 latent 翻译回可读的物理量，因此长程预测仍能被物理约束检验，而不必端到端重训整个世界模型。
+            <br /><b>相关引申</b>　探针（probe）源自表征学习评测：冻结主干、只训练浅层读出，用来验证表征是否真的编码了目标信息。
+          </div>
+          <div class="pop-foot">
+            <button class="mini">跳回原句</button>
+            <button class="mini">继续追问</button>
+            <span style="font-size:10px;color:var(--muted);align-self:center;margin-left:auto">300 字内 · 贴着本文上下文</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <aside class="rail">
+      <div class="rail-head">
+        <div class="rail-title">术语索引 <span class="count">42</span><span style="margin-left:auto;font-size:10.5px;color:var(--muted);font-weight:400">按出现顺序</span></div>
+        <div class="search">🔍 在本文中搜索术语或关键词…</div>
+        <div class="chips">
+          <span class="chip on">全部 42</span>
+          <span class="chip">模型 11</span>
+          <span class="chip">训练 9</span>
+          <span class="chip">指标 6</span>
+        </div>
+      </div>
+      <div class="rail-list">
+        <div class="t-item"><span class="t-no">01</span><span><span class="t-name">autoregressive rollout</span><span class="t-zh">自回归展开</span></span><span class="t-meta">3 处</span></div>
+        <div class="t-item"><span class="t-no">02</span><span><span class="t-name">Joint Embedding Predictive Architectures</span><span class="t-zh">联合嵌入预测架构</span></span><span class="t-meta">5 处</span></div>
+        <div class="t-item"><span class="t-no">03</span><span><span class="t-name">latent space</span><span class="t-zh">隐空间</span></span><span class="t-meta">7 处</span></div>
+        <div class="t-item"><span class="t-no">04</span><span><span class="t-name">kinematic-level planning</span><span class="t-zh">运动学层规划</span></span><span class="t-meta">1 处</span></div>
+        <div class="t-item"><span class="t-no">05</span><span><span class="t-name">high-frequency control</span><span class="t-zh">高频控制</span></span><span class="t-meta">2 处</span></div>
+        <div class="t-item"><span class="t-no">06</span><span><span class="t-name">quadrotor control</span><span class="t-zh">四旋翼控制</span></span><span class="t-meta">6 处</span></div>
+        <div class="t-item"><span class="t-no">07</span><span><span class="t-name">latent dynamics model</span><span class="t-zh">隐动力学模型</span></span><span class="t-meta">4 处</span></div>
+        <div class="t-item on"><span class="t-no">08</span><span><span class="t-name">physics-inspired prober</span><span class="t-zh">物理启发探针</span></span><span class="t-meta">2 处</span></div>
+        <div class="t-item"><span class="t-no">09</span><span><span class="t-name">interpretable state</span><span class="t-zh">可解释状态</span></span><span class="t-meta">2 处</span></div>
+      </div>
+      <div class="dock">
+        <div class="dock-head"><span class="dock-dot"></span>智能体待命 · 已自动解析并识别 42 个术语</div>
+        <div class="dock-row">
+          <div class="dock-input">问智能体：这段什么意思 / 翻译 / 导出…</div>
+          <button class="dock-send">↑</button>
+        </div>
+        <div class="dock-quick"><span>整篇概览</span><span>按主题分组</span><span>翻成中文</span><span>导出术语表</span></div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="status">
+    <span>解析 <b>完成</b></span>
+    <span>术语识别 <b>42 / 42</b></span>
+    <span>当前视图 <b>原文</b></span>
+    <span style="margin-left:auto">模型 deepseek-chat · 单次解释约 0.6 s</span>
+  </div>
+</div>
+</body>
+</html>

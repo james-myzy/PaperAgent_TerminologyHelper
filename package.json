@@ -1,0 +1,33 @@
+{
+  "name": "paper-agent",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "论文术语分析助手：不改原文的 AI 阅读层（术语高亮、就地解释、PDF 版式、双语对照）",
+  "scripts": {
+    "dev": "vite build --config web/vite.config.ts && node server/index.mjs",
+    "build": "vite build --config web/vite.config.ts",
+    "start": "node server/index.mjs",
+    "smoke": "node scripts/smoke.mjs",
+    "probe": "node scripts/probe.mjs",
+    "check:ui": "node scripts/reader-check.mjs",
+    "shots": "node scripts/shots.mjs",
+    "pack": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/pack.ps1",
+    "pack:win": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-portable.ps1"
+  },
+  "dependencies": {
+    "docx": "^9.5.1",
+    "mammoth": "^1.9.0",
+    "pdfjs-dist": "^4.10.38"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "playwright-core": "^1.65.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.5"
+  }
+}

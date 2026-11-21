@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install --ignore-scripts
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Syntax check server and scripts
+        run: |
+          fail=0
+          for f in $(find server scripts -name '*.mjs'); do
+            node --check "$f" || fail=1
+          done
+          exit $fail
+
+      - name: Boot in offline demo mode and smoke-test the API
+        run: |
+          LLM_PROVIDER=mock PORT=8787 node server/index.mjs > /tmp/server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID 2>/dev/null || true' EXIT
+
+          for i in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:8787/api/health > /tmp/health.json 2>/dev/null; then break; fi
+            sleep 0.5
+          done
+          cat /tmp/health.json
+          grep -q '"ok":true' /tmp/health.json
+
+          curl -fsS -X POST http://127.0.0.1:8787/api/chat \
+            -H 'Content-Type: application/json' \
+            -d '{"messages":[{"role":"user","content":"hello"}]}' > /tmp/chat.txt
+          head -c 300 /tmp/chat.txt
+          grep -q '"type":"ready"' /tmp/chat.txt

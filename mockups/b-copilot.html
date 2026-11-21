@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>方案 B · 双栏副驾</title>
+<link rel="stylesheet" href="mock.css" />
+<style>
+  .shell { height: 100vh; display: flex; flex-direction: column; }
+  .main { flex: 1; display: grid; grid-template-columns: 44% 1fr; gap: 16px; padding: 16px 20px 18px; min-height: 0; }
+
+  .chat { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+  .chat-head { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--line); background: linear-gradient(180deg,#fff,#fbfdfe); }
+  .chat-head h2 { font-family: var(--serif); font-size: 14px; margin: 0; }
+  .chat-head .hint { font-size: 11px; color: var(--muted); }
+  .msgs { flex: 1; overflow: hidden; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+
+  .msg { display: flex; gap: 9px; }
+  .msg.user { flex-direction: row-reverse; }
+  .avatar { width: 26px; height: 26px; border-radius: 7px; flex: none; display: grid; place-items: center; font-size: 11px; font-weight: 700; }
+  .msg.user .avatar { background: var(--primary-soft); color: var(--primary-dark); }
+  .msg.agent .avatar { background: linear-gradient(150deg,var(--primary),#0aa7c9); color: #fff; }
+  .bubble { max-width: 92%; font-size: 13px; line-height: 1.75; padding: 10px 13px; border-radius: 12px; border: 1px solid var(--line); background: #fbfdfe; }
+  .msg.user .bubble { background: var(--primary); color: #fff; border-color: transparent; }
+
+  .timeline { display: flex; flex-direction: column; gap: 5px; margin-bottom: 9px; }
+  .step { display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--muted); }
+  .step .tick { width: 14px; height: 14px; border-radius: 50%; background: rgba(23,163,74,0.12); color: var(--accent); display: grid; place-items: center; font-size: 9px; flex: none; }
+  .step b { color: var(--ink-soft); font-weight: 600; font-family: var(--mono); font-size: 10.5px; }
+
+  .cite { display: inline-flex; align-items: center; gap: 4px; font-size: 10.5px; color: var(--primary-dark); background: var(--primary-soft); border-radius: 5px; padding: 1px 7px; margin-left: 2px; }
+  .bubble h4 { font-family: var(--serif); font-size: 13px; margin: 10px 0 5px; }
+  .bubble ul { margin: 4px 0 6px; padding-left: 18px; }
+  .bubble li { margin: 3px 0; }
+  .bubble em { font-style: normal; color: var(--primary-dark); font-weight: 600; }
+
+  .composer { border-top: 1px solid var(--line); padding: 10px 14px 12px; background: linear-gradient(180deg,#fbfdfe,#fff); }
+  .quick { display: flex; gap: 6px; margin-bottom: 8px; }
+  .quick span { font-size: 11px; border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; color: var(--ink-soft); background: var(--surface); }
+  .input-row { display: flex; gap: 8px; }
+  .input { flex: 1; height: 40px; border: 1px solid var(--line-strong); border-radius: 10px; padding: 0 12px; display: flex; align-items: center; font-size: 12.5px; color: var(--muted); background: #fff; }
+  .send { width: 68px; height: 40px; border-radius: 10px; border: none; background: var(--primary); color: #fff; font-weight: 600; font-size: 12.5px; }
+
+  .doc { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+  .tabs { display: flex; gap: 2px; padding: 9px 12px 0; border-bottom: 1px solid var(--line); background: #fbfdfe; }
+  .tab { padding: 8px 12px 10px; font-size: 12.5px; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tab.on { color: var(--primary-dark); border-bottom-color: var(--primary); font-weight: 600; }
+  .tab .n { font-size: 10px; background: var(--surface-2); border-radius: 999px; padding: 1px 6px; margin-left: 4px; color: var(--muted); }
+  .tab.on .n { background: var(--primary-soft); color: var(--primary-dark); }
+  .doc-body { flex: 1; overflow: hidden; padding: 14px 20px; }
+  .meta { display: flex; gap: 6px; margin-bottom: 12px; }
+  .meta span { font-size: 10.5px; color: var(--muted); border: 1px solid var(--line); border-radius: 5px; padding: 2px 7px; }
+  .page-label { font-size: 10px; letter-spacing: 1.2px; color: var(--muted); display: flex; align-items: center; gap: 8px; margin: 14px 0 6px; }
+  .page-label::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  .doc .paper h1 { font-size: 15px; margin-bottom: 6px; }
+  .doc .paper p { font-size: 13px; line-height: 1.95; }
+
+  .bar { height: 38px; border-top: 1px solid var(--line); background: #fbfdfe; display: flex; align-items: center; gap: 10px; padding: 0 14px; font-size: 11px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="topbar">
+    <div class="logo">透</div>
+    <div>
+      <div class="brand-title">术语透视 <span style="font-size:11px;color:var(--muted);font-family:var(--sans);font-weight:400">· 智能副驾</span></div>
+      <div class="brand-sub">对话负责提问，右边永远是原文</div>
+    </div>
+    <span class="pill">SkyJEPA · 18 页</span>
+    <div class="spacer"></div>
+    <span class="pill">模型 <b>deepseek-chat</b></span>
+    <button class="btn">清空对话</button>
+  </div>
+
+  <div class="main">
+    <section class="card chat">
+      <div class="chat-head">
+        <h2>智能体对话</h2>
+        <span class="hint">模型自己决定调哪些工具</span>
+        <div class="spacer"></div>
+        <button class="btn" style="padding:4px 10px">换一篇</button>
+      </div>
+      <div class="msgs">
+        <div class="msg user">
+          <div class="avatar">我</div>
+          <div class="bubble">这篇论文解决什么问题？把它和 JEPA 系列的区别讲清楚。</div>
+        </div>
+        <div class="msg agent">
+          <div class="avatar">AI</div>
+          <div class="bubble">
+            <div class="timeline">
+              <div class="step"><span class="tick">✓</span><b>document_overview</b> 92,878 字 · 18 段 · 英文 <span style="margin-left:auto">0.8s</span></div>
+              <div class="step"><span class="tick">✓</span><b>extract_terms</b> 42 个术语（词库 25 / 语义 17）<span style="margin-left:auto">6.2s</span></div>
+              <div class="step"><span class="tick">✓</span><b>search_document</b> 「JEPA」命中 11 处 <span style="margin-left:auto">0.2s</span></div>
+            </div>
+            这篇论文要解决的是<em>长程动力学预测在真实四旋翼上失效</em>的问题。
+
+            <h4>它的判断</h4>
+            现有神经网络动力学模型靠自回归展开做长程预测，误差会随时间放大；而 JEPA 类方法此前多停在运动学层规划，没有进入高频控制。
+
+            <h4>与 JEPA 系列的区别</h4>
+            <ul>
+              <li>不做像素重建，只在隐空间学动力学；</li>
+              <li>新增一个<em>物理启发探针</em>，把冻结 latent 解回可解释状态；</li>
+              <li>目标是实时四旋翼控制，而不是导航级规划。<span class="cite">第 1 段</span></li>
+            </ul>
+            需要我把这三个区别对应到原文位置，或把方法一节翻成中文吗？
+          </div>
+        </div>
+        <div class="msg user">
+          <div class="avatar">我</div>
+          <div class="bubble">把「物理启发探针」这个术语解释一下 <span style="opacity:.8">（点了正文高亮）</span></div>
+        </div>
+        <div class="msg agent">
+          <div class="avatar">AI</div>
+          <div class="bubble">
+            <div class="timeline">
+              <div class="step"><span class="tick">✓</span><b>explain_term</b> physics-inspired prober <span style="margin-left:auto">0.6s</span></div>
+            </div>
+            <h4>物理启发探针（physics-inspired prober）</h4>
+            <b style="color:var(--primary-dark)">专业定义</b>　一个轻量映射头，把冻结的隐空间表示投影到有物理意义的低维状态量（位置、姿态、速度）。
+            <br /><b style="color:var(--primary-dark)">上下文释义</b>　本文用它把 JEPA 学到的抽象 latent 翻译回可读物理量，长程预测因此能被物理约束检验，不必端到端重训世界模型。
+            <br /><b style="color:var(--primary-dark)">相关引申</b>　探针源自表征学习评测：冻结主干、只训浅层读出，用来验证表征是否真的编码了目标信息。
+            <div style="margin-top:8px;font-size:11px;color:var(--muted)">已写入右侧术语卡 · <span class="cite">第 1 段</span></div>
+          </div>
+        </div>
+        <div class="msg agent" style="align-items:center;color:var(--muted);font-size:11.5px">
+          <div class="avatar" style="background:var(--surface-2);color:var(--muted)">…</div>
+          <span>智能体就绪，可继续追问</span>
+        </div>
+      </div>
+      <div class="composer">
+        <div class="quick"><span>整篇概览</span><span>识别全文术语</span><span>翻成中文</span><span>导出高亮 Word</span></div>
+        <div class="input-row">
+          <div class="input">继续问这篇论文：方法、指标、某个术语怎么理解…</div>
+          <button class="send">发送</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card doc">
+      <div class="tabs">
+        <div class="tab on">文档</div>
+        <div class="tab">术语 <span class="n">42</span></div>
+        <div class="tab">译文 <span class="n">3</span></div>
+      </div>
+      <div class="doc-body paper">
+        <div class="meta"><span>PDF</span><span>18 段</span><span>约 92,878 字</span><span>英文</span><span>42 个术语已高亮</span></div>
+        <div class="page-label">第 1 段</div>
+        <h1>SkyJEPA: Learning Long-Horizon World Models for Zero-Shot Sim-to-Real Control of Quadrotors</h1>
+        <p><b>Abstract</b>—Accurate dynamics models are critical for informed decision-making in robotic systems, particularly for agile aerial vehicles operating under uncertainty. Neural network dynamics models are attractive for capturing complex nonlinear effects, but existing predictive approaches struggle with long-horizon forecasting because their <mark>autoregressive rollout<span class="term-no">01</span></mark> mechanism amplifies errors over time. <mark>Joint Embedding Predictive Architectures (JEPAs)<span class="term-no">02</span></mark> offer a compelling alternative by modeling dynamics in <mark>latent space<span class="term-no">03</span></mark>, yet prior JEPA-style methods for robot navigation have been studied primarily for <mark>kinematic-level planning<span class="term-no">04</span></mark>, with limited investigation in <mark>high-frequency control<span class="term-no">05</span></mark>.</p>
+        <p>In this work, we introduce the JEPA-style model for real-time <mark>quadrotor control<span class="term-no">06</span></mark>. The proposed approach combines a <mark>latent dynamics model<span class="term-no">07</span></mark> with a novel <mark class="active">physics-inspired prober<span class="term-no">08</span></mark> that maps frozen latents to <mark>interpretable state<span class="term-no">09</span></mark>, enabling physically grounded long-horizon prediction.</p>
+        <p>We evaluate the approach on aggressive trajectory tracking and deploy zero-shot on a physical platform, reporting <mark>tracking error<span class="term-no">18</span></mark>, <mark>recovery rate<span class="term-no">19</span></mark> and <mark>inference latency<span class="term-no">15</span></mark> at 100 Hz.</p>
+        <div class="page-label">第 2 段</div>
+        <div class="h2" style="margin-top:4px">2. Method</div>
+        <p>The world model is trained entirely in <mark>latent space<span class="term-no">03</span></mark>: an encoder maps observations to embeddings, a predictor models their evolution under actions, and the prober decodes physical state. No pixel reconstruction is required, which keeps the training signal focused on dynamics rather than appearance.</p>
+      </div>
+      <div class="bar">
+        <span>点击正文高亮 → 直接在对话里追问</span>
+        <span style="margin-left:auto">↑↓ 自动同步滚动</span>
+      </div>
+    </section>
+  </div>
+</div>
+</body>
+</html>

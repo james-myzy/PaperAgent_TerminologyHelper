@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>方案 C · 分析工作台</title>
+<link rel="stylesheet" href="mock.css" />
+<style>
+  .shell { height: 100vh; display: flex; flex-direction: column; }
+  .main { flex: 1; display: grid; grid-template-columns: 232px 1fr 396px; min-height: 0; }
+
+  /* 左：大纲 + 术语分组 */
+  .nav { border-right: 1px solid var(--line); background: rgba(255,255,255,0.62); padding: 14px 12px; overflow: hidden; }
+  .nav .section-label { margin-bottom: 8px; }
+  .outline { margin-bottom: 20px; }
+  .o-item { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--ink-soft); padding: 6px 8px; border-radius: 7px; }
+  .o-item .num { font-family: var(--mono); font-size: 10px; color: var(--muted); width: 16px; }
+  .o-item.on { background: var(--primary-soft); color: var(--primary-dark); font-weight: 600; }
+  .o-item.on .num { color: var(--primary); }
+  .o-sub { font-size: 11px; color: var(--muted); padding: 4px 8px 4px 31px; }
+
+  .group { display: flex; align-items: center; gap: 7px; font-size: 12px; padding: 6px 8px; border-radius: 7px; color: var(--ink-soft); }
+  .group .n { font-family: var(--mono); font-size: 10px; color: var(--primary); background: var(--primary-soft); border-radius: 4px; padding: 0 5px; }
+  .group .bar { flex: 1; height: 4px; border-radius: 2px; background: var(--surface-2); overflow: hidden; }
+  .group .bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--primary), #4fb8d4); }
+
+  /* 中：正文 */
+  .center { overflow: hidden; padding: 22px 30px; }
+  .center-inner { max-width: 700px; margin: 0 auto; position: relative; }
+
+  /* 右：任务面板 */
+  .panel { border-left: 1px solid var(--line); background: rgba(255,255,255,0.8); display: flex; flex-direction: column; min-height: 0; }
+  .panel-tabs { display: flex; gap: 2px; padding: 10px 12px 0; border-bottom: 1px solid var(--line); background: #fbfdfe; }
+  .ptab { padding: 7px 11px 9px; font-size: 12px; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .ptab.on { color: var(--primary-dark); border-bottom-color: var(--primary); font-weight: 600; }
+  .panel-body { flex: 1; overflow: hidden; padding: 14px 16px; }
+
+  .report-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .report-head .title { font-family: var(--serif); font-size: 14px; font-weight: 700; }
+  .badge { font-size: 10px; color: var(--accent); background: rgba(23,163,74,0.1); border-radius: 999px; padding: 2px 8px; }
+  .rcard { border: 1px solid var(--line); border-radius: 10px; padding: 11px 12px; margin-bottom: 9px; background: #fcfefe; }
+  .rcard .k { font-size: 10.5px; letter-spacing: 0.6px; color: var(--muted); margin-bottom: 5px; }
+  .rcard .v { font-size: 12.5px; line-height: 1.75; color: var(--ink-soft); }
+  .rcard .v b { color: var(--ink); font-weight: 600; }
+  .rcard .v em { font-style: normal; color: var(--primary-dark); font-weight: 600; }
+
+  .metrics { display: flex; gap: 8px; }
+  .metric { flex: 1; border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; background: #fff; }
+  .metric .num { font-family: var(--serif); font-size: 18px; font-weight: 700; color: var(--primary-dark); }
+  .metric .lab { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  .dist { display: flex; flex-direction: column; gap: 7px; }
+  .drow { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--ink-soft); }
+  .drow .name { width: 74px; color: var(--muted); }
+  .drow .track { flex: 1; height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+  .drow .track i { display: block; height: 100%; background: linear-gradient(90deg, var(--primary), #57c0d8); }
+  .drow .cnt { font-family: var(--mono); font-size: 10px; color: var(--muted); width: 22px; text-align: right; }
+
+  .panel-foot { border-top: 1px solid var(--line); padding: 10px 14px; display: flex; gap: 8px; align-items: center; background: #fbfdfe; }
+  .panel-foot .input { flex: 1; height: 34px; border: 1px solid var(--line-strong); border-radius: 8px; padding: 0 10px; font-size: 11.5px; color: var(--muted); display: flex; align-items: center; background: #fff; }
+  .panel-foot .send { width: 60px; height: 34px; border-radius: 8px; border: none; background: var(--primary); color: #fff; font-size: 12px; font-weight: 600; }
+
+  .status { height: 30px; border-top: 1px solid var(--line); background: rgba(255,255,255,0.8); display: flex; align-items: center; gap: 18px; padding: 0 20px; font-size: 11px; color: var(--muted); }
+  .status b { color: var(--ink-soft); }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); display: inline-block; }
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="topbar">
+    <div class="logo">透</div>
+    <div>
+      <div class="brand-title">术语透视 <span style="font-size:11px;color:var(--muted);font-family:var(--sans);font-weight:400">· 分析工作台</span></div>
+      <div class="brand-sub">读、查、译、导出，四个产物并排工作</div>
+    </div>
+    <span class="pill"><span class="dot"></span> SkyJEPA · 18 页 · 92,878 字</span>
+    <div class="spacer"></div>
+    <div class="seg"><span class="on">原文</span><span>译文</span></div>
+    <button class="btn">导出高亮 Word</button>
+    <button class="btn primary">生成透视报告</button>
+  </div>
+
+  <div class="main">
+    <nav class="nav">
+      <div class="section-label">文档大纲</div>
+      <div class="outline">
+        <div class="o-item"><span class="num">1</span>Abstract</div>
+        <div class="o-item on"><span class="num">2</span>Method</div>
+        <div class="o-sub">2.1 World model</div>
+        <div class="o-sub">2.2 Prober</div>
+        <div class="o-item"><span class="num">3</span>Experiments</div>
+        <div class="o-item"><span class="num">4</span>Results</div>
+        <div class="o-item"><span class="num">5</span>Conclusion</div>
+      </div>
+
+      <div class="section-label">术语分布 · 42</div>
+      <div class="group"><span>模型与架构</span><span class="bar"><i style="width:100%"></i></span><span class="n">11</span></div>
+      <div class="group"><span>训练与优化</span><span class="bar"><i style="width:78%"></i></span><span class="n">9</span></div>
+      <div class="group"><span>评估指标</span><span class="bar"><i style="width:52%"></i></span><span class="n">6</span></div>
+      <div class="group"><span>物理与工程</span><span class="bar"><i style="width:70%"></i></span><span class="n">8</span></div>
+      <div class="group"><span>其余</span><span class="bar"><i style="width:60%"></i></span><span class="n">8</span></div>
+    </nav>
+
+    <main class="center">
+      <div class="center-inner paper">
+        <h1 style="font-size:19px">SkyJEPA: Learning Long-Horizon World Models for Zero-Shot Sim-to-Real Control of Quadrotors</h1>
+        <div class="authors">Pratyakh Rao¹, Wancong Zhang², Randall Balestriero³, Yann LeCun², Giuseppe Loianno¹</div>
+        <div class="affil" style="margin-bottom:14px">¹NYU Tandon　²FAIR at Meta　³Brown University</div>
+
+        <div class="h2" style="margin-top:0">2. Method</div>
+        <p>The world model is trained entirely in <mark>latent space<span class="term-no">03</span></mark>: an encoder maps observations to embeddings, a predictor models their evolution under actions, and the <mark class="active">physics-inspired prober<span class="term-no">08</span></mark> decodes physical state. No pixel reconstruction is required, which keeps the training signal focused on dynamics rather than appearance.</p>
+        <p>Because the encoder stays frozen during control, the <mark>latent dynamics model<span class="term-no">07</span></mark> can be reused across tasks. The prober is trained with a small amount of <mark>ground-truth state<span class="term-no">11</span></mark> from simulation, then transferred without fine-tuning — the <mark>zero-shot sim-to-real<span class="term-no">10</span></mark> setting.</p>
+        <p>At deployment, the predictor runs a <mark>receding-horizon rollout<span class="term-no">12</span></mark> at <mark>100 Hz<span class="term-no">13</span></mark> on an onboard <mark>Jetson Orin<span class="term-no">14</span></mark>, keeping <mark>inference latency<span class="term-no">15</span></mark> under 4 ms.</p>
+
+        <div class="h2">3. Experiments</div>
+        <p>We compare against <mark>model-based RL<span class="term-no">16</span></mark> and <mark>end-to-end imitation<span class="term-no">17</span></mark> baselines on aggressive trajectory tracking, reporting <mark>tracking error<span class="term-no">18</span></mark>, <mark>recovery rate<span class="term-no">19</span></mark> and success under <mark>disturbance rejection<span class="term-no">20</span></mark>.</p>
+      </div>
+    </main>
+
+    <aside class="panel">
+      <div class="panel-tabs">
+        <div class="ptab on">透视报告</div>
+        <div class="ptab">双语对照</div>
+        <div class="ptab">批注 3</div>
+        <div class="ptab">术语本</div>
+      </div>
+      <div class="panel-body">
+        <div class="report-head">
+          <span class="title">论文透视报告</span>
+          <span class="badge">智能体生成 · 可编辑</span>
+        </div>
+
+        <div class="rcard">
+          <div class="k">一句话结论</div>
+          <div class="v">把 JEPA 的隐空间预测搬到真实四旋翼上，靠一个<em>物理启发探针</em>把 latent 解回可解释状态，从而在 100 Hz 上做到零样本 sim-to-real。</div>
+        </div>
+
+        <div class="rcard">
+          <div class="k">方法三要素</div>
+          <div class="v">
+            <b>① 隐空间世界模型</b>　不做像素重建，编码器冻结、预测器学动力学<br />
+            <b>② 物理启发探针</b>　线性映射 latent → 位置/姿态/速度<br />
+            <b>③ 滚动时域控制</b>　机上 100 Hz 推理，延迟 &lt; 4 ms
+          </div>
+        </div>
+
+        <div class="rcard">
+          <div class="k">关键指标</div>
+          <div class="metrics">
+            <div class="metric"><div class="num">28.4</div><div class="lab">BLEU（对照基线）</div></div>
+            <div class="metric"><div class="num">4 ms</div><div class="lab">单步推理延迟</div></div>
+            <div class="metric"><div class="num">100 Hz</div><div class="lab">控制频率</div></div>
+          </div>
+        </div>
+
+        <div class="rcard">
+          <div class="k">术语分布</div>
+          <div class="dist">
+            <div class="drow"><span class="name">模型与架构</span><span class="track"><i style="width:100%"></i></span><span class="cnt">11</span></div>
+            <div class="drow"><span class="name">训练与优化</span><span class="track"><i style="width:78%"></i></span><span class="cnt">9</span></div>
+            <div class="drow"><span class="name">评估指标</span><span class="track"><i style="width:52%"></i></span><span class="cnt">6</span></div>
+            <div class="drow"><span class="name">物理与工程</span><span class="track"><i style="width:70%"></i></span><span class="cnt">8</span></div>
+          </div>
+        </div>
+
+        <div class="rcard">
+          <div class="k">局限与复现要点</div>
+          <div class="v">探针依赖仿真里的<b>真值状态</b>，真机上需额外标定；论文未给出不同机体质量下的泛化实验；复现需 <em>Jetson Orin</em> 与 100 Hz 控制器。</div>
+        </div>
+      </div>
+      <div class="panel-foot">
+        <div class="input">让智能体补充：局限、复现要点、相关工作…</div>
+        <button class="send">执行</button>
+      </div>
+    </aside>
+  </div>
+
+  <div class="status">
+    <span><span class="dot"></span> 解析完成 · 18 段</span>
+    <span>术语 42 · 详解 8</span>
+    <span>译文 0 / 18 段</span>
+    <span style="margin-left:auto">上次操作：生成透视报告 · 12.4 s</span>
+  </div>
+</div>
+</body>
+</html>
